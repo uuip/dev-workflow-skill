@@ -1,0 +1,16 @@
+{
+  "description": "Dev Workflow stage guard",
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/user-prompt-submit.py\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

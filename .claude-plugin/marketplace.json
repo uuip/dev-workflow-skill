@@ -1,0 +1,16 @@
+{
+  "name": "dev-workflow",
+  "owner": {
+    "name": "uuip"
+  },
+  "metadata": {
+    "description": "门控式软件开发流水线插件市场"
+  },
+  "plugins": [
+    {
+      "name": "dev-workflow",
+      "source": "./",
+      "description": "门控式软件开发流水线 - 从需求澄清到验收的完整工作流"
+    }
+  ]
+}
