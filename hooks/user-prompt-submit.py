@@ -113,6 +113,8 @@ def main() -> int:
 
     reminder = (
         "Dev Workflow Gate Reminder:\n"
+        "On Claude Code, enter plan mode now (EnterPlanMode) before starting — "
+        "Stages 0-3 are read-only and plan mode matches them. Do not use ExitPlanMode to skip stages.\n"
         "Read the dev-workflow skill and references/workflow.md first. "
         "Identify the current stage, load only that stage reference, and do not skip Gates. "
         "Before coding, requirement clarification, design, design docs, and task planning must pass. "

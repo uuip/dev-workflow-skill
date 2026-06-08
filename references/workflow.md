@@ -19,6 +19,12 @@ When running this skill, determine the current stage, then read only the referen
     - `verification-reviewer`
 11. If the user says required documents, files, screenshots, logs, API docs, credentials, API keys, tokens, accounts, or other external resources will be provided, stop at the owning stage until those inputs are actually available. Do not invent, skip, mock, or mark them optional unless the user explicitly changes the requirement.
 12. If verification or tests require external resources only the user can provide, such as API keys, cloud accounts, paid services, private endpoints, captcha/manual login, or production-like data, stop and ask for the missing resource or for explicit permission to record that check as unverified.
+13. Claude Code plan mode approval (ExitPlanMode) is NOT a stage confirmation. Never advance a stage because a plan was approved in plan mode. Stage confirmation before Stage 3 requires an explicit user answer recorded via `advance.py --confirmation` with the user's own words.
+14. Do not call ExitPlanMode while the workflow is in Stage 0-3. Plan-mode exit to implementation is only appropriate at Stage 4 to Stage 5 on Claude Code.
+15. Before Stage 3, the model does not self-certify that a stage Gate passed. State the evidence, ask the user, and advance only after the user explicitly confirms. From Stage 3 onward, forward advancement on evidence is allowed per the rules above.
+16. A `design-reviewer` blocking finding counts as "fixed" only after the user confirms each fix. Updating the plan or design file is not user confirmation.
+17. Stay within the current stage's Allowed list. Do not perform a later stage's work (for example, no Stage 6 integration test design while in Stage 3). When unsure, re-read the current stage's Allowed and Forbidden lists before acting.
+18. Ground every factual claim before acting on it. This applies to ALL stages. For any claim about what exists or how the project works — files, infrastructure, configs, APIs, dependencies, conventions — verify it by reading the actual project (search, read files, run a read-only check) before you state it or build on it. Never let a prior or a "most common pattern" stand in for verification. Do not degrade "should check first" into "guess the most likely answer, then justify the guess" (confirmation bias + hallucinated completion + missing grounding). When you cannot verify, say so explicitly and ask, rather than assuming.
 
 ## Platform Notes
 

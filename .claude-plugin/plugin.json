@@ -1,7 +1,7 @@
 {
   "name": "dev-workflow",
   "description": "门控式软件开发流水线 - 从需求澄清到验收的完整工作流 | Gated software development workflow from requirement clarification to verification",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "author": {
     "name": "sharp"
   },

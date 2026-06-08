@@ -40,6 +40,21 @@ HUMAN_CONFIRMATION_TRANSITIONS = {
     (2, 3): "design_docs_accepted_for_planning",
 }
 
+# Confirmation text must be the user's own words. These phrases signal the model
+# invented the confirmation from a plan-mode approval instead of asking the user.
+INVENTED_CONFIRMATION_MARKERS = (
+    "exitplanmode",
+    "approved plan with",
+    "plan mode",
+    "计划模式",
+    "退出计划",
+)
+
+
+def looks_invented(confirmation: str) -> bool:
+    text = confirmation.lower()
+    return any(marker in text for marker in INVENTED_CONFIRMATION_MARKERS)
+
 
 def state_path(project_dir: Path) -> Path:
     return project_dir / ".claude" / "dev-workflow-state.json"
@@ -124,7 +139,16 @@ def cmd_to(project_dir: Path, target: int, reason: str | None, confirmation: str
         if confirmation_key and not confirmation:
             print(
                 f"Human confirmation is required to advance from Stage {current} to Stage {target}. "
-                f"Pass --reason with Gate evidence and --confirmation with the user's confirmation text.",
+                f"STOP. Do NOT retry by inventing confirmation text. Ask the user to confirm the "
+                f"Gate, then pass their exact words via --confirmation (and --reason with the Gate evidence).",
+                file=sys.stderr,
+            )
+            return 1
+        if confirmation_key and confirmation and looks_invented(confirmation):
+            print(
+                "Refused: --confirmation must be the user's real answer, not a plan-mode approval. "
+                "A stage Gate before Stage 3 is confirmed by the user, not by ExitPlanMode. "
+                "Ask the user and pass their exact words.",
                 file=sys.stderr,
             )
             return 1
