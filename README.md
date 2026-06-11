@@ -40,6 +40,8 @@
 
 这些 skills 来自 [superpowers](https://github.com/obra/superpowers) 插件，需要单独安装。
 
+本插件依赖 [playwright-cli skill](https://github.com/microsoft/playwright-cli)
+
 ### Hook 支持
 
 本插件使用 Claude Code 的 UserPromptSubmit hook 来自动阻止跳过阶段的行为。
@@ -59,10 +61,14 @@
 
 > 前置要求：Claude Code 需支持插件市场（`/plugin` 命令）。若 `/plugin` 不可用，先升级：`npm update -g @anthropic-ai/claude-code`。
 
-### 1. 安装依赖插件（superpowers）
+### 1. 安装依赖插件
 
 ```bash
 /plugin install superpowers@claude-plugins-official
+
+npm install -g @playwright/cli@latest
+playwright-cli --help
+playwright-cli install --skills
 ```
 
 ### 2. 安装本插件

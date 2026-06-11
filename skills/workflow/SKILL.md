@@ -49,6 +49,7 @@ Then:
 - Reviewer agents are configured by exact name: `design-reviewer`, `verification-reviewer`.
 - Use the named reviewer agent at the stages specified in `references/workflow.md` when this runtime supports agent delegation.
 - Claude Code has a `UserPromptSubmit` hook configured that injects a workflow Gate reminder for `/dev-workflow:workflow` and risky stage-transition prompts.
+- Claude Code has a `PreToolUse` hook that, while in Stage 0 or Stage 1, denies writing a design document under the project `docs/` (except `docs/superpowers/`). Design-doc write-out is Stage 2's job; this hard-stops the Stage 1 -> Stage 2 boundary from collapsing.
 
 ## Invocation
 
@@ -80,27 +81,23 @@ Require explicit user confirmation before:
 - Entering software design
 - Treating the design as approved
 
-From Stage 3 onward, human confirmation is not required for forward stage advancement. Gates still require evidence; missing required input or external resources still block the workflow.
+Before requesting the Stage 0->1 confirmation, the model must self-check and state that Stage 0 only clarified requirements and produced no solution, UI, interface, or data design; design work belongs to Stage 1.
+
+From Stage 3 onward, human confirmation is not required for forward stage advancement. Gates still require evidence; missing required input or external resources still block the workflow. (Exact gate criteria for each stage are in `workflow.md`.)
 
 ## Plan Mode vs Dev-Workflow Stages
 
-Claude Code has its own "plan mode" with ExitPlanMode. That is a SEPARATE approval
-system from the dev-workflow stage gate. Keep them apart:
+Claude Code's "plan mode" (ExitPlanMode) is a SEPARATE approval system from the
+dev-workflow stage gate. The `advance.py` stage gate is the ONLY way to advance:
+a plan approved via ExitPlanMode is NOT a stage confirmation and must never advance
+or skip a stage. While in Stage 0-3, do NOT call ExitPlanMode; exiting plan mode to
+implementation is only appropriate at the Stage 4 -> Stage 5 transition.
 
-- The dev-workflow stage gate plus `advance.py` is the ONLY way to advance. A plan
-  approved via ExitPlanMode is NOT a stage confirmation and must never be used to
-  advance a stage or skip stages.
-- While in Stage 0-3, do NOT call ExitPlanMode to "get the requirement / design /
-  plan approved." Confirm a stage only by: asking the user, getting an explicit
-  answer, then `advance.py --confirmation "<the user's exact words>"`.
-- ExitPlanMode (exiting to implementation) is only appropriate once the workflow has
-  passed the Stage 4 Gate and is entering Stage 5 (TDD Implementation), on Claude Code.
-- `--confirmation` must carry the user's real words. Never invent confirmation text
-  (e.g. "User approved plan with ExitPlanMode") to satisfy the gate.
-- Before Stage 3, the model does NOT decide that a Gate passed. State the evidence,
-  ask the user, and advance only after the user explicitly confirms.
-- A `design-reviewer` blocking finding counts as "fixed" only after the user confirms
-  each fix. Editing the plan or design file is not user confirmation.
+The detailed rules — `--confirmation` must carry the user's real words (never
+invented), no self-certification of a Gate before Stage 3, and a `design-reviewer`
+blocking finding is "fixed" only after the user confirms each fix — live in
+`workflow.md` Global Rules (the plan-mode and confirmation rules). `workflow.md` is
+the authoritative source for all stage rules; this section is only a pointer.
 
 ## Completion
 

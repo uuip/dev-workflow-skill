@@ -53,3 +53,5 @@ Use skill `superpowers:brainstorming`.
 7. 是否有可以更简单实现的地方
 
 本轮不要设计落档，不要拆开发任务，不要写代码。
+
+design-reviewer 在本阶段审查的是设计草案本身（方案、图表、自审结果）；本轮不得在项目 docs/ 写设计文档（pre-tool-use hook 会拒绝），落档是 Stage 2 的职责。

@@ -6,7 +6,7 @@ When running this skill, determine the current stage, then read only the referen
 ## Global Rules
 
 1. Do not skip stages.
-2. Execute only actions allowed by the current stage.
+2. Execute only actions allowed by the current stage. Do not perform a later stage's work (for example, no Stage 6 integration test design while in Stage 3). When unsure, re-read the current stage's Allowed and Forbidden lists before acting.
 3. If required inputs are missing, stop and state exactly what is missing.
 4. A stage must pass its Gate before the next stage starts.
 5. If a previous artifact is incomplete, go back to the stage that owns it.
@@ -17,14 +17,12 @@ When running this skill, determine the current stage, then read only the referen
 10. When a stage requires review, delegate to the configured reviewer agent by exact name when the platform supports agents:
     - `design-reviewer`
     - `verification-reviewer`
-11. If the user says required documents, files, screenshots, logs, API docs, credentials, API keys, tokens, accounts, or other external resources will be provided, stop at the owning stage until those inputs are actually available. Do not invent, skip, mock, or mark them optional unless the user explicitly changes the requirement.
-12. If verification or tests require external resources only the user can provide, such as API keys, cloud accounts, paid services, private endpoints, captcha/manual login, or production-like data, stop and ask for the missing resource or for explicit permission to record that check as unverified.
-13. Claude Code plan mode approval (ExitPlanMode) is NOT a stage confirmation. Never advance a stage because a plan was approved in plan mode. Stage confirmation before Stage 3 requires an explicit user answer recorded via `advance.py --confirmation` with the user's own words.
-14. Do not call ExitPlanMode while the workflow is in Stage 0-3. Plan-mode exit to implementation is only appropriate at Stage 4 to Stage 5 on Claude Code.
-15. Before Stage 3, the model does not self-certify that a stage Gate passed. State the evidence, ask the user, and advance only after the user explicitly confirms. From Stage 3 onward, forward advancement on evidence is allowed per the rules above.
-16. A `design-reviewer` blocking finding counts as "fixed" only after the user confirms each fix. Updating the plan or design file is not user confirmation.
-17. Stay within the current stage's Allowed list. Do not perform a later stage's work (for example, no Stage 6 integration test design while in Stage 3). When unsure, re-read the current stage's Allowed and Forbidden lists before acting.
-18. Ground every factual claim before acting on it. This applies to ALL stages. For any claim about what exists or how the project works — files, infrastructure, configs, APIs, dependencies, conventions — verify it by reading the actual project (search, read files, run a read-only check) before you state it or build on it. Never let a prior or a "most common pattern" stand in for verification. Do not degrade "should check first" into "guess the most likely answer, then justify the guess" (confirmation bias + hallucinated completion + missing grounding). When you cannot verify, say so explicitly and ask, rather than assuming.
+11. If required external resources are missing — whether the user said they would provide documents, files, screenshots, logs, API docs, credentials, API keys, tokens, or accounts, or a verification/test needs API keys, cloud accounts, paid services, private endpoints, captcha/manual login, or production-like data — stop at the owning stage and ask for the resource or for explicit permission to record the check as unverified. Do not invent, skip, mock, or mark them optional unless the user explicitly changes the requirement.
+12. Claude Code plan mode approval (ExitPlanMode) is NOT a stage confirmation. Never advance a stage because a plan was approved in plan mode. Stage confirmation before Stage 3 requires an explicit user answer recorded via `advance.py --confirmation` with the user's own words.
+13. Do not call ExitPlanMode while the workflow is in Stage 0-3. Plan-mode exit to implementation is only appropriate at Stage 4 to Stage 5 on Claude Code.
+14. Before Stage 3, the model does not self-certify that a stage Gate passed. State the evidence, ask the user, and advance only after the user explicitly confirms. From Stage 3 onward, forward advancement on evidence is allowed per the rules above.
+15. A `design-reviewer` blocking finding counts as "fixed" only after the user confirms each fix. Updating the plan or design file is not user confirmation.
+16. Ground every factual claim before acting on it. This applies to ALL stages. For any claim about what exists or how the project works — files, infrastructure, configs, APIs, dependencies, conventions — verify it by reading the actual project (search, read files, run a read-only check) before you state it or build on it. Never let a prior or a "most common pattern" stand in for verification. Do not degrade "should check first" into "guess the most likely answer, then justify the guess" (confirmation bias + hallucinated completion + missing grounding). When you cannot verify, say so explicitly and ask, rather than assuming.
 
 ## Platform Notes
 
@@ -54,7 +52,7 @@ Allowed:
 - Scan obvious missing roles, permissions, flows, data rules, edge cases, and deployment risks
 
 Forbidden:
-- No detailed design
+- No detailed design: no solution comparison, no UI layout, no data-flow, no interface or data-structure design, no tab/component structure, no constant definitions
 - No task breakdown
 - No coding
 
@@ -70,6 +68,7 @@ Gate:
 - Any user-promised required supporting material has been provided, or the user explicitly removes that requirement
 - Critical questions are answered or explicit assumptions are accepted by the user
 - Risks and missing information are recorded
+- Before requesting the 0->1 confirmation, the model explicitly self-checks and states that this stage only clarified requirements and produced no solution, UI, interface, or data design
 - User confirms entering design
 
 Next:
@@ -86,7 +85,7 @@ Required skill:
 - `superpowers:brainstorming`
 
 Reviewer agent:
-- `design-reviewer`
+- `design-reviewer` — reviews the DESIGN DRAFT (brainstorming output, options, diagrams, self-review), not a document. No design doc exists yet under project `docs/`; Stage 2 creates it.
 
 Input:
 - Confirmed requirement clarification
@@ -101,7 +100,7 @@ Allowed:
 - Delegate design review to `design-reviewer` after the design draft is ready
 
 Forbidden:
-- No design documentation write-out
+- No design documentation write-out (enforced by the pre-tool-use hook: writing under project `docs/` is denied in Stage 0 and Stage 1; `docs/superpowers/` is exempt)
 - No task breakdown
 - No coding
 
@@ -321,11 +320,12 @@ Output:
 Gate:
 - Core business flow coverage list was produced
 - Every new or modified core business flow has a complete successful-path test, or an uncovered reason is recorded with user acknowledgement
-- Permission, state transition, duplicate submission, concurrency, cache, async job, and external-service flows are covered when applicable, or uncovered reasons are recorded with user acknowledgement
+- Permission, state transition, duplicate submission, concurrency, cache, async job, data anomaly, and external-service flows are covered when applicable, or uncovered reasons are recorded with user acknowledgement
 - Required real infrastructure was used, or missing external resources are recorded with user acknowledgement
 - Integration test output and exit codes were read
 - Test data setup and cleanup are clear
 - No blocking integration failure remains
+- For a frontend change, the PostToolUse hook recorded a real `playwright-cli` UI verification (advancing 6->7 is hard-blocked otherwise); a backend-only change (no frontend file recorded) requires user confirmation that no UI verification is needed. Text claims alone are not accepted.
 
 Next:
 - Stage 7

@@ -14,11 +14,23 @@
     ],
     "PreToolUse": [
       {
-        "matcher": "ExitPlanMode",
+        "matcher": "ExitPlanMode|Write|Edit|MultiEdit",
         "hooks": [
           {
             "type": "command",
             "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/pre-tool-use.py\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit|Bash|mcp__playwright__*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/post-tool-use.py\"",
             "timeout": 10
           }
         ]

@@ -56,6 +56,49 @@ def looks_invented(confirmation: str) -> bool:
     return any(marker in text for marker in INVENTED_CONFIRMATION_MARKERS)
 
 
+def check_stage6_ui_gate(state: dict, confirmation: str | None) -> int | None:
+    """Stage 6 -> 7 UI-verification evidence gate.
+
+    Evidence is recorded by the PostToolUse hook into state["impl_evidence"].
+    Returns None to allow the transition, or 1 to refuse it.
+    """
+    impl = state.get("impl_evidence") or {}
+    if impl.get("ui_verified"):
+        return None  # real playwright run recorded -> allow
+
+    frontend = impl.get("frontend_touched")
+    if frontend:
+        last_file = frontend.get("last_file", "a frontend file") if isinstance(frontend, dict) else "a frontend file"
+        print(
+            f"Refused 6->7: Stage 5/6 modified a frontend file ({last_file}) but no "
+            "playwright-cli browser verification was recorded. Stage 6 requires real UI "
+            "verification for frontend changes — do NOT skip it. Run the UI flow via "
+            "playwright-cli (open -> act -> snapshot/assert -> close), then advance. "
+            "--confirmation cannot bypass this gate.",
+            file=sys.stderr,
+        )
+        return 1
+
+    # No frontend change recorded and no UI evidence: genuinely backend-only is
+    # possible, but the model does not get to assert that for free.
+    if not confirmation:
+        print(
+            "6->7 needs confirmation: no playwright-cli UI evidence was recorded, and no "
+            "frontend file change was detected this implementation round. If this change "
+            "truly needs no browser UI verification, ask the user and re-run with "
+            "--confirmation \"<user's exact words>\". Do not invent confirmation text.",
+            file=sys.stderr,
+        )
+        return 1
+    if looks_invented(confirmation):
+        print(
+            "Refused: --confirmation must be the user's real answer, not invented text.",
+            file=sys.stderr,
+        )
+        return 1
+    return None  # user confirmed no UI verification is needed -> allow
+
+
 def state_path(project_dir: Path) -> Path:
     return project_dir / ".claude" / "dev-workflow-state.json"
 
@@ -152,6 +195,10 @@ def cmd_to(project_dir: Path, target: int, reason: str | None, confirmation: str
                 file=sys.stderr,
             )
             return 1
+        if (current, target) == (6, 7):
+            gate = check_stage6_ui_gate(state, confirmation)
+            if gate is not None:
+                return gate
         pass  # forward by 1 is always valid
     elif target < current and target in VALID_FALLBACKS.get(current, set()):
         pass  # valid fallback
@@ -191,6 +238,9 @@ def cmd_to(project_dir: Path, target: int, reason: str | None, confirmation: str
     state["history"].append(entry)
     state["stage"] = target
     state["started_at"] = now_iso()
+    if target == 5:
+        # Entering implementation: reset evidence so it reflects this round only.
+        state.pop("impl_evidence", None)
     write_state(path, state)
 
     direction = "Advanced" if target > current else "Fell back"
